@@ -1,0 +1,8 @@
+# Environment variables
+.env
+
+# Tailscale state
+tailscale/
+
+# Logs
+*.log

@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: peerlab-tailscale
+    hostname: peerlab-${USER_ASN:-64512}
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - ./tailscale/state:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+      - TS_EXTRA_ARGS=--advertise-tags=tag:peerlab
+    networks:
+      - peerlab-net
+
+  bird:
+    image: ghcr.io/nxthdr/bird:2.16
+    container_name: peerlab-bird
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./bird/bird.conf:/etc/bird/bird.conf:ro
+      - ./bird/prefixes.conf:/etc/bird/prefixes.conf:ro
+    # Share network namespace with Tailscale container
+    network_mode: "service:tailscale"
+    depends_on:
+      - tailscale
+    environment:
+      - USER_ASN=${USER_ASN:-64512}
+
+networks:
+  peerlab-net:
+    driver: bridge
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: fd00::/64
