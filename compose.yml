@@ -14,7 +14,6 @@ services:
       - TS_AUTHKEY=${TS_AUTHKEY}
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
-      - TS_EXTRA_ARGS=--advertise-tags=tag:peerlab
     networks:
       - peerlab-net
 
