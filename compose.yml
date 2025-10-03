@@ -48,7 +48,6 @@ services:
       - NET_RAW
     volumes:
       - ./bird/bird.conf:/etc/bird/bird.conf
-      - ./bird/prefixes.conf:/etc/bird/prefixes.conf:ro
     # Share network namespace with Tailscale container
     network_mode: "service:tailscale"
     depends_on:

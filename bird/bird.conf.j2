@@ -23,26 +23,13 @@ protocol kernel {
     };
 }
 
-# Static routes for user prefixes
-# protocol static user_routes {
-#     ipv6;
-#     include "/etc/bird/prefixes.conf";
-# }
-
 # Import filter - accept everything from IXP
 filter ImportFromIXP {
-    # Log what we receive
-    print "Received route: ", net, " from AS", bgp_path.first, " via ", from;
     accept;
 }
 
-# Export filter - only announce user prefixes
+# Export filter - reject everything
 filter ExportToIXP {
-    # Only export routes from user_routes protocol
-    # if source = RTS_STATIC then {
-    #     print "Announcing route: ", net, " to IXP";
-    #     accept;
-    # }
     reject;
 }
 
@@ -53,10 +40,10 @@ filter ExportToIXP {
 protocol bgp {{ ixp.name }} {
     local {{ local_ip }} as {{ local_asn }};
     neighbor {{ ixp.ip }} as {{ ixp.asn }};
-    
+
     # Use multihop since Tailscale IPs aren't directly connected
     multihop;
-    
+
     # IPv4 channel - only for BGP session establishment, no routes exchanged
     ipv4 {
         import none;
