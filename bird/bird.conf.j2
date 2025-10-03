@@ -1,5 +1,6 @@
 # PeerLab BIRD Configuration
-# This configuration connects to ixpfra01 via Tailscale
+# Auto-generated from template - DO NOT EDIT MANUALLY
+# Generated on: {{ generation_time }}
 
 router id 10.0.0.1;
 
@@ -45,13 +46,13 @@ filter ExportToIXP {
     reject;
 }
 
-# BGP session to ixpfra01
-# BGP session runs over IPv4 (Tailscale), but exchanges IPv6 routes
-# Note: Replace TAILSCALE_IP_OF_IXPFRA01 with the actual Tailscale IP
-# You can find it by running: tailscale status | grep ixpfra01
-protocol bgp ixpfra01 {
-    local 100.71.126.58 as 64512;  # Your Tailscale IPv4 and ASN
-    neighbor 100.102.32.36 as 215011;  # ixpfra01's Tailscale IPv4
+{% for ixp in ixp_servers %}
+# BGP session to {{ ixp.name }}
+# Tailscale IP: {{ ixp.ip }}
+# ASN: {{ ixp.asn }}
+protocol bgp {{ ixp.name }} {
+    local {{ local_ip }} as {{ local_asn }};
+    neighbor {{ ixp.ip }} as {{ ixp.asn }};
     
     # Use multihop since Tailscale IPs aren't directly connected
     multihop;
@@ -74,3 +75,5 @@ protocol bgp ixpfra01 {
     hold time 90;
     keepalive time 30;
 }
+
+{% endfor %}

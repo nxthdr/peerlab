@@ -17,6 +17,22 @@ services:
     networks:
       - peerlab-net
 
+  bootstrap:
+    image: python:3.12-alpine
+    container_name: peerlab-bootstrap
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./bootstrap/bootstrap.py:/bootstrap.py:ro
+      - ./bird:/config
+    environment:
+      - USER_ASN=${USER_ASN:-64512}
+      - TAILSCALE_CONTAINER=peerlab-tailscale
+    command: sh -c "apk add --no-cache docker-cli && pip install --no-cache-dir jinja2 && python3 /bootstrap.py"
+    depends_on:
+      - tailscale
+    networks:
+      - peerlab-net
+
   bird:
     image: ghcr.io/nxthdr/bird:2.16
     container_name: peerlab-bird
@@ -25,12 +41,13 @@ services:
       - NET_ADMIN
       - NET_RAW
     volumes:
-      - ./bird/bird.conf:/etc/bird/bird.conf:ro
+      - ./bird/bird.conf:/etc/bird/bird.conf
       - ./bird/prefixes.conf:/etc/bird/prefixes.conf:ro
     # Share network namespace with Tailscale container
     network_mode: "service:tailscale"
     depends_on:
-      - tailscale
+      bootstrap:
+        condition: service_completed_successfully
     environment:
       - USER_ASN=${USER_ASN:-64512}
 

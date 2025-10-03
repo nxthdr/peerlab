@@ -4,5 +4,8 @@
 # Tailscale state
 tailscale/
 
+# Generated BIRD configuration
+bird/bird.conf
+
 # Logs
 *.log
