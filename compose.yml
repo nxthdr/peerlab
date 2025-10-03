@@ -18,7 +18,7 @@ services:
       - peerlab-net
 
   bootstrap:
-    image: python:3.12-alpine
+    image: python:3.13-alpine
     container_name: peerlab-bootstrap
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
