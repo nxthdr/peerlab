@@ -4,6 +4,7 @@
     "config:recommended"
   ],
 
+  "ignoreTests": true,
   "packageRules": [
     {
       "matchUpdateTypes": ["minor", "patch", "digest"],
