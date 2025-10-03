@@ -27,7 +27,13 @@ services:
     environment:
       - USER_ASN=${USER_ASN:-64512}
       - TAILSCALE_CONTAINER=peerlab-tailscale
-    command: sh -c "apk add --no-cache docker-cli && pip install --no-cache-dir jinja2 && python3 /bootstrap.py"
+    command: |
+      sh -c "
+        apk add --no-cache docker-cli && \
+        pip install --root-user-action=ignore --no-cache-dir --upgrade pip && \
+        pip install --root-user-action=ignore --no-cache-dir jinja2 && \
+        python3 /bootstrap.py
+      "
     depends_on:
       - tailscale
     networks:
