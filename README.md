@@ -55,4 +55,4 @@ You also need a valid **nxthdr** account to authenticate with Headscale. Please 
    make status
    ```
 
-   You should see BGP sessions in "Established" state.
+   After a while, you should see BGP sessions in "Established" state.

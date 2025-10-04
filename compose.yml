@@ -8,7 +8,7 @@ services:
     volumes:
       - ./tailscale/state:/var/lib/tailscale
       - /dev/net/tun:/dev/net/tun
-      - ./bootstrap/tailscale-entrypoint.sh:/tailscale-entrypoint.sh:ro
+      - ./setup/tailscale-entrypoint.sh:/tailscale-entrypoint.sh:ro
     environment:
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
@@ -22,7 +22,7 @@ services:
     container_name: peerlab-bootstrap
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./bootstrap/bootstrap.py:/bootstrap.py:ro
+      - ./setup/bootstrap.py:/bootstrap.py:ro
       - ./bird:/config
     environment:
       - USER_ASN=${USER_ASN:-64512}
