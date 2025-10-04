@@ -19,26 +19,58 @@ except ImportError:
     sys.exit(1)
 
 
-def wait_for_tailscale(container_name, timeout=60):
-    """Wait for Tailscale to be ready"""
-    print("⏳ Waiting for Tailscale to connect...")
+def wait_for_tailscale(container_name, timeout=300):
+    """Wait for Tailscale daemon to start and verify authentication"""
+    print("⏳ Waiting for Tailscale daemon to start...")
     
-    for i in range(timeout):
+    # First, wait for tailscaled to be running
+    for i in range(30):
         try:
             result = subprocess.run(
                 ["docker", "exec", container_name, "tailscale", "status"],
                 capture_output=True,
+                text=True,
                 timeout=5
             )
-            if result.returncode == 0:
-                print("✅ Tailscale connected")
-                return True
+            # Daemon is running if we get any response
+            break
         except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
             pass
         
         time.sleep(1)
+    else:
+        print("❌ Tailscale daemon failed to start")
+        return False
     
-    print(f"❌ Tailscale failed to connect after {timeout} seconds")
+    print("✅ Tailscale daemon is running")
+    print()
+    
+    # Check if authenticated
+    print("🔍 Checking Tailscale authentication status...")
+    try:
+        result = subprocess.run(
+            ["docker", "exec", container_name, "tailscale", "status"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0 and "100." in result.stdout:
+            print("✅ Authenticated to Headscale")
+            return True
+    except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
+        pass
+    
+    # Not authenticated - this shouldn't happen with the new workflow
+    print("❌ Tailscale is not authenticated")
+    print()
+    print("Please authenticate first by running:")
+    print("  make auth")
+    print()
+    print("Or manually:")
+    print(f"  docker exec -it {container_name} tailscale up \\")
+    print("    --login-server=https://headscale.nxthdr.dev \\")
+    print("    --accept-routes --reset")
+    print()
     return False
 
 
@@ -147,10 +179,11 @@ def main():
     local_asn = os.environ.get("USER_ASN", "64512")
     tailscale_container = os.environ.get("TAILSCALE_CONTAINER", "peerlab-tailscale")
     
-    if not local_asn or local_asn == "64512":
+    if local_asn == "64512":
         print("⚠️  Warning: Using default ASN 64512")
+        print("   Consider setting a unique ASN in your .env file")
     
-    print(f"📋 Local ASN: {local_asn}")
+    print(f"📋 Local ASN: AS{local_asn}")
     print()
     
     # Wait for Tailscale

@@ -1,12 +1,16 @@
-.PHONY: help up down restart logs status bird birdc tailscale shell-bird shell-tailscale
+.PHONY: help setup auth up down restart logs status bird birdc tailscale shell-bird shell-tailscale
 
 # Default target
 help:
 	@echo "PeerLab - Available Commands"
 	@echo "============================"
 	@echo ""
+	@echo "Setup:"
+	@echo "  make setup           - Start Tailscale container (first step)"
+	@echo "  make auth            - Authenticate with Headscale (second step)"
+	@echo "  make up              - Start full stack after authentication (third step)"
+	@echo ""
 	@echo "Container Management:"
-	@echo "  make up              - Start all containers"
 	@echo "  make down            - Stop and remove all containers"
 	@echo "  make restart         - Restart all containers"
 	@echo "  make logs            - Show logs from all containers"
@@ -30,11 +34,36 @@ help:
 	@echo ""
 	@echo "Examples:"
 	@echo "  make bird CMD='show route protocol ixpfra01'"
-	@echo "  make tailscale CMD='ping 100.102.32.36'"
+	@echo "  make tailscale CMD='ping 100.64.0.2'"
+
+# Setup workflow
+setup:
+	@echo "Starting Tailscale container..."
+	@docker-compose up -d tailscale
+	@echo ""
+	@echo "✅ Tailscale container started"
+	@echo ""
+	@echo "Next step: Authenticate with Headscale"
+	@echo "Run: make auth"
+
+auth:
+	@echo "Starting Headscale authentication..."
+	@echo ""
+	@docker exec -it peerlab-tailscale tailscale up --login-server=https://headscale.nxthdr.dev --accept-routes --reset
+	@echo ""
+	@echo "✅ Authentication complete"
+	@echo ""
+	@echo "Next step: Start the full stack"
+	@echo "Run: make up"
 
 # Container management
 up:
-	docker-compose up -d
+	@echo "Starting PeerLab..."
+	@docker-compose up -d
+	@echo ""
+	@echo "✅ PeerLab is starting up"
+	@echo ""
+	@echo "Check status with: make status"
 
 down:
 	docker-compose down
@@ -50,10 +79,10 @@ status:
 	@docker-compose ps
 	@echo ""
 	@echo "=== Tailscale Status ==="
-	@docker exec peerlab-tailscale tailscale status 2>/dev/null || echo "Tailscale not ready"
+	@docker exec peerlab-tailscale tailscale status 2>/dev/null || echo "Tailscale not ready. Run 'make setup' then 'make auth'"
 	@echo ""
 	@echo "=== BIRD Protocols ==="
-	@docker exec peerlab-bird birdc show protocols 2>/dev/null || echo "BIRD not ready"
+	@docker exec peerlab-bird birdc show protocols 2>/dev/null || echo "BIRD not ready. Run 'make up' after authentication"
 
 # BIRD commands
 bird:
@@ -88,7 +117,7 @@ ts-ip:
 	@docker exec peerlab-tailscale tailscale ip -4
 
 ts-ping:
-	@docker exec peerlab-tailscale ping -c 4 100.102.32.36
+	@docker exec peerlab-tailscale ping -c 4 100.64.0.2
 
 shell-tailscale:
 	@docker exec -ti peerlab-tailscale /bin/sh

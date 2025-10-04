@@ -7,64 +7,52 @@ Learn BGP by connecting to a real Internet Exchange Point (IXP) and receiving th
 
 ## Requirements
 
-You'll need Docker and Docker Compose installed, along with a [Tailscale](https://tailscale.com/) account to generate an OAuth token for authentication.
+You'll need Docker and Docker Compose installed. PeerLab uses Headscale (a self-hosted Tailscale control server) for secure connectivity to the IXP.
+
+You also need a valid **nxthdr** account to authenticate with Headscale. Please register at [nxthdr.dev](https://nxthdr.dev).
 
 ## Quick Start
 
 1. **Configure your environment:**
    ```bash
    cp .env.example .env
-   # Edit .env with your ASN and Tailscale auth key
+   # Edit .env and set your Private ASN (e.g., USER_ASN=64512)
    ```
 
-2. **Start PeerLab:**
+2. **Start Tailscale:**
    ```bash
-   ./setup.sh
+   make setup
    ```
 
-3. **Check status:**
+   This will start the Tailscale container and display authentication instructions.
+
+3. **Authenticate with Headscale:**
+
+   In a new terminal, run:
+   ```bash
+   make auth
+   ```
+
+   This will output a URL like:
+   ```
+   To authenticate, visit:
+   https://headscale.nxthdr.dev/register/mkey:...
+   ```
+
+   Open this URL in your browser and authenticate with your nxthdr.dev account.
+
+4. **Start PeerLab:**
+
+   Once authenticated, start the full stack:
+   ```bash
+   make up
+   ```
+
+   This will configure BIRD and establish BGP sessions with the IXP.
+
+5. **Check status:**
    ```bash
    make status
    ```
 
-## Useful Commands
-
-```bash
-make help
-```
-
-```bash
-PeerLab - Available Commands
-============================
-
-Container Management:
-  make up              - Start all containers
-  make down            - Stop and remove all containers
-  make restart         - Restart all containers
-  make logs            - Show logs from all containers
-  make status          - Show container status
-
-BIRD Commands:
-  make bird            - Run any BIRD command (usage: make bird CMD='show protocols')
-  make bird-status     - Show BIRD status
-  make bird-protocols  - Show BGP protocols
-  make bird-routes     - Show all received routes
-  make bird-routes-count - Count received routes
-  make bird-config     - Reload BIRD configuration
-  make shell-bird      - Open shell in BIRD container
-
-Tailscale Commands:
-  make tailscale       - Run any Tailscale command (usage: make tailscale CMD='status')
-  make ts-status       - Show Tailscale connection status
-  make ts-ip           - Show Tailscale IP address
-  make ts-ping         - Ping ixpfra01 via Tailscale
-  make shell-tailscale - Open shell in Tailscale container
-
-Examples:
-  make bird CMD='show route protocol ixpfra01'
-  make tailscale CMD='ping 100.102.32.36'
-```
-
-
-
-
+   You should see BGP sessions in "Established" state.
