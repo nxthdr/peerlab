@@ -215,7 +215,7 @@ def main():
     # Render configuration
     print("🔧 Rendering BIRD configuration from template...")
     template_path = Path("/config/bird.conf.j2")
-    output_path = Path("/config/bird.conf")
+    output_path = Path("/output/bird.conf")
     
     if not template_path.exists():
         print(f"❌ Template not found at {template_path}")

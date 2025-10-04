@@ -36,7 +36,7 @@ You also need a valid **nxthdr** account to authenticate with Headscale. Please 
    This will output a URL like:
    ```
    To authenticate, visit:
-   https://headscale.nxthdr.dev/register/mkey:...
+   https://headscale.nxthdr.dev/register/<key>
    ```
 
    Open this URL in your browser and authenticate with your nxthdr.dev account.

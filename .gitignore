@@ -2,10 +2,10 @@
 .env
 
 # Tailscale state
-tailscale/
+/setup/tailscale/data/
 
-# Generated BIRD configuration
-bird/bird.conf
+# User workspace (generated configurations)
+/workspace/
 
 # Logs
 *.log

@@ -6,14 +6,14 @@ services:
     restart: unless-stopped
     privileged: true
     volumes:
-      - ./tailscale/state:/var/lib/tailscale
+      - ./setup/tailscale/data:/var/lib/tailscale
       - /dev/net/tun:/dev/net/tun
-      - ./setup/tailscale-entrypoint.sh:/tailscale-entrypoint.sh:ro
+      - ./setup/tailscale/entrypoint.sh:/entrypoint.sh:ro
     environment:
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
       - TS_LOGIN_SERVER=https://headscale.nxthdr.dev
-    entrypoint: /tailscale-entrypoint.sh
+    entrypoint: /entrypoint.sh
     networks:
       - peerlab-net
 
@@ -22,8 +22,8 @@ services:
     container_name: peerlab-bootstrap
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./setup/bootstrap.py:/bootstrap.py:ro
-      - ./bird:/config
+      - ./setup/bootstrap:/config:ro
+      - ./workspace:/output
     environment:
       - USER_ASN=${USER_ASN:-64512}
       - TAILSCALE_CONTAINER=peerlab-tailscale
@@ -32,7 +32,7 @@ services:
         apk add --no-cache docker-cli && \
         pip install --root-user-action=ignore --no-cache-dir --upgrade pip && \
         pip install --root-user-action=ignore --no-cache-dir jinja2 && \
-        python3 /bootstrap.py
+        python3 /config/bootstrap.py
       "
     depends_on:
       tailscale:
@@ -48,7 +48,7 @@ services:
       - NET_ADMIN
       - NET_RAW
     volumes:
-      - ./bird/bird.conf:/etc/bird/bird.conf
+      - ./workspace/bird.conf:/etc/bird/bird.conf
     # Share network namespace with Tailscale container
     network_mode: "service:tailscale"
     depends_on:
