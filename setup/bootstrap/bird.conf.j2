@@ -23,13 +23,28 @@ protocol kernel {
     };
 }
 
+{% if user_prefixes %}
+# Static routes for user-defined prefixes
+protocol static user_prefixes {
+    ipv6;
+{% for prefix in user_prefixes %}
+    route {{ prefix }} blackhole;
+{% endfor %}
+}
+{% endif %}
+
 # Import filter - accept everything from IXP
 filter ImportFromIXP {
     accept;
 }
 
-# Export filter - reject everything
+# Export filter - advertise user prefixes
 filter ExportToIXP {
+{% if user_prefixes %}
+    # Advertise user-defined prefixes
+    if proto = "user_prefixes" then accept;
+{% endif %}
+    # Reject everything else
     reject;
 }
 

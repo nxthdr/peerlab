@@ -22,6 +22,8 @@ help:
 	@echo "  make bird-protocols  - Show BGP protocols"
 	@echo "  make bird-routes     - Show all received routes"
 	@echo "  make bird-routes-count - Count received routes"
+	@echo "  make bird-exports    - Show routes being advertised"
+	@echo "  make bird-prefixes   - Show user-configured prefixes"
 	@echo "  make bird-config     - Reload BIRD configuration"
 	@echo "  make shell-bird      - Open shell in BIRD container"
 	@echo ""
@@ -99,6 +101,14 @@ bird-routes:
 
 bird-routes-count:
 	@docker exec peerlab-bird birdc show route count
+
+bird-exports:
+	@echo "=== Routes Being Advertised to IXP Peers ==="
+	@docker exec peerlab-bird sh -c 'for proto in $$(birdc show protocols | grep "^ixp" | awk "{print \$$1}"); do echo ""; echo "→ $$proto:"; result=$$(birdc "show route export $$proto" 2>/dev/null | grep -v "^BIRD" | grep -v "^Table"); if [ -n "$$result" ]; then echo "$$result"; else echo "  (no routes - session may not be established)"; fi; done'
+
+bird-prefixes:
+	@echo "=== User-Configured Prefixes ==="
+	@docker exec peerlab-bird birdc show route protocol user_prefixes 2>/dev/null || echo "No user prefixes configured"
 
 bird-config:
 	@docker exec peerlab-bird birdc configure

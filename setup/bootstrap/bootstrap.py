@@ -4,6 +4,7 @@ PeerLab Bootstrap
 Automatically generates BIRD configuration from Jinja2 template based on Tailscale network
 """
 
+import ipaddress
 import json
 import os
 import subprocess
@@ -143,7 +144,29 @@ def parse_ixp_servers(status_data):
     return ixp_servers
 
 
-def render_bird_config(local_ip, local_asn, ixp_servers, template_path, output_path):
+def parse_user_prefixes(prefixes_str):
+    """Parse and validate user-provided IPv6 prefixes"""
+    if not prefixes_str or not prefixes_str.strip():
+        return []
+
+    prefixes = []
+    raw_prefixes = [p.strip() for p in prefixes_str.split(",") if p.strip()]
+
+    for prefix_str in raw_prefixes:
+        try:
+            # Parse and validate IPv6 prefix
+            network = ipaddress.IPv6Network(prefix_str, strict=False)
+            prefixes.append(str(network))
+        except (ipaddress.AddressValueError, ValueError) as e:
+            print(f"⚠️  Warning: Invalid IPv6 prefix '{prefix_str}': {e}")
+            print("   Skipping this prefix")
+
+    return prefixes
+
+
+def render_bird_config(
+    local_ip, local_asn, ixp_servers, user_prefixes, template_path, output_path
+):
     """Render BIRD configuration from Jinja2 template"""
 
     # Read template
@@ -157,6 +180,7 @@ def render_bird_config(local_ip, local_asn, ixp_servers, template_path, output_p
         local_ip=local_ip,
         local_asn=local_asn,
         ixp_servers=ixp_servers,
+        user_prefixes=user_prefixes,
         generation_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     )
 
@@ -175,6 +199,7 @@ def main():
     # Get configuration from environment
     local_asn = os.environ.get("USER_ASN", "64512")
     tailscale_container = os.environ.get("TAILSCALE_CONTAINER", "peerlab-tailscale")
+    user_prefixes_str = os.environ.get("USER_PREFIXES", "")
 
     if local_asn == "64512":
         print("⚠️  Warning: Using default ASN 64512")
@@ -209,6 +234,16 @@ def main():
         print(f"   - {ixp['name']}: {ixp['ip']} (AS{ixp['asn']})")
     print()
 
+    # Parse user prefixes
+    user_prefixes = parse_user_prefixes(user_prefixes_str)
+    if user_prefixes:
+        print(f"✅ Advertising {len(user_prefixes)} IPv6 prefix(es):")
+        for prefix in user_prefixes:
+            print(f"   - {prefix}")
+    else:
+        print("ℹ️  No prefixes configured - receive-only mode")
+    print()
+
     # Render configuration
     print("🔧 Rendering BIRD configuration from template...")
     template_path = Path("/config/bird.conf.j2")
@@ -218,13 +253,20 @@ def main():
         print(f"❌ Template not found at {template_path}")
         sys.exit(1)
 
-    render_bird_config(local_ip, local_asn, ixp_servers, template_path, output_path)
+    render_bird_config(
+        local_ip, local_asn, ixp_servers, user_prefixes, template_path, output_path
+    )
 
     print(f"✅ Configuration written to {output_path}")
     print()
     print("📋 Generated BGP sessions:")
     for ixp in ixp_servers:
         print(f"   - protocol bgp {ixp['name']}")
+    print()
+    if user_prefixes:
+        print(f"📡 Advertising {len(user_prefixes)} prefix(es) to all IXP peers")
+    else:
+        print("📡 Receive-only mode (no prefixes advertised)")
     print()
     print("✅ Bootstrap complete!")
 

@@ -26,6 +26,7 @@ services:
       - ./workspace:/output
     environment:
       - USER_ASN=${USER_ASN:-64512}
+      - USER_PREFIXES=${USER_PREFIXES:-}
       - TAILSCALE_CONTAINER=peerlab-tailscale
     command: |
       sh -c "

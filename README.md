@@ -16,7 +16,24 @@ You also need a valid **nxthdr** account to authenticate with Headscale. Please 
 1. **Configure your environment:**
    ```bash
    cp .env.example .env
-   # Edit .env and set your Private ASN (e.g., USER_ASN=64512)
+   # Edit .env and configure:
+   # - USER_ASN: Your private ASN (e.g., 64512)
+   # - USER_PREFIXES: IPv6 prefixes to advertise (optional)
+   ```
+
+   **Example configurations:**
+   ```bash
+   # Receive-only mode (no prefix advertisement)
+   USER_ASN=64512
+   USER_PREFIXES=
+
+   # Advertise a single prefix
+   USER_ASN=64512
+   USER_PREFIXES=2001:db8:1234::/48
+
+   # Advertise multiple prefixes
+   USER_ASN=64512
+   USER_PREFIXES=2001:db8:1234::/48,2001:db8:5678::/48
    ```
 
 2. **Start Tailscale:**
@@ -56,3 +73,59 @@ You also need a valid **nxthdr** account to authenticate with Headscale. Please 
    ```
 
    After a while, you should see BGP sessions in "Established" state.
+
+## Prefix Advertisement
+
+PeerLab supports advertising one or multiple IPv6 prefixes to the IXP. This is configured via the `USER_PREFIXES` environment variable.
+
+### Configuration
+
+Edit your `.env` file and set `USER_PREFIXES` to a comma-separated list of IPv6 prefixes:
+
+```bash
+# Single prefix
+USER_PREFIXES=2001:db8:1234::/48
+
+# Multiple prefixes
+USER_PREFIXES=2001:db8:1234::/48,2001:db8:5678::/48,2001:db8:abcd::/48
+```
+
+**Important notes:**
+- Only IPv6 prefixes are supported
+- Prefixes must be in CIDR notation (e.g., `2001:db8::/48`)
+- Invalid prefixes will be skipped with a warning during bootstrap
+- Leave empty for receive-only mode (no advertisement)
+
+### Viewing Advertised Routes
+
+After starting PeerLab with prefixes configured, you can verify they're being advertised:
+
+```bash
+# View all exported routes to all IXP peers
+make bird-exports
+
+# View routes advertised to a specific peer
+make bird CMD='show route export ixpfra01'
+
+# View the static routes table (your configured prefixes)
+make bird-prefixes
+```
+
+### How It Works
+
+1. **Static Routes**: Your prefixes are configured as static blackhole routes in BIRD
+2. **Export Filter**: The `ExportToIXP` filter advertises these static routes to all BGP peers
+3. **BGP Advertisement**: Each IXP peer receives your prefixes via BGP
+
+### Updating Prefixes
+
+To change advertised prefixes:
+
+1. Update `USER_PREFIXES` in your `.env` file
+2. Restart PeerLab:
+   ```bash
+   make down
+   make up
+   ```
+
+The bootstrap process will regenerate the BIRD configuration with your new prefixes.
