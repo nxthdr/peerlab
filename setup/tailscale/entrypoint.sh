@@ -17,8 +17,9 @@ if tailscale status 2>/dev/null | grep -q "100\."; then
         # Extract first prefix and add ::face address
         FIRST_PREFIX=$(echo "$USER_PREFIXES" | cut -d',' -f1 | tr -d ' ')
         if [ -n "$FIRST_PREFIX" ]; then
-            # Extract network part and add ::face
-            IPV6_ADDR=$(echo "$FIRST_PREFIX" | sed 's|/[0-9]*$||')::face
+            # Extract network part, remove trailing ::, and add ::face
+            PREFIX_BASE=$(echo "$FIRST_PREFIX" | sed 's|/[0-9]*$||' | sed 's|::$||')
+            IPV6_ADDR="${PREFIX_BASE}::face"
             echo "🌐 Configuring IPv6 address: $IPV6_ADDR"
 
             # Wait for tailscale0 interface to be ready

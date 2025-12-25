@@ -15,6 +15,7 @@ services:
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
       - TS_LOGIN_SERVER=https://headscale.nxthdr.dev
+      - USER_PREFIXES=${USER_PREFIXES:-}
     entrypoint: /entrypoint.sh
     networks:
       - peerlab-net
