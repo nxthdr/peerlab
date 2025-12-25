@@ -1,0 +1,20 @@
+# Caddy configuration for PeerLab ASN test page
+# Generated: {{ generation_time }}
+
+:80 {
+    root * /srv
+    templates
+    file_server
+
+    header {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        X-User-ASN "AS{{ user_asn }}"
+    }
+
+    log {
+        output stdout
+        format console
+    }
+}

@@ -191,6 +191,70 @@ def render_bird_config(
     return config
 
 
+def render_caddy_config(user_prefixes, user_asn, template_path, output_path):
+    """Render Caddy configuration from Jinja2 template"""
+
+    # Read template
+    with open(template_path, "r") as f:
+        template_content = f.read()
+
+    template = Template(template_content)
+
+    # Get the first prefix for the web server address
+    ipv6_address = "::1"  # Default fallback
+    if user_prefixes:
+        # Use the first prefix and add ::face as the host address
+        prefix = user_prefixes[0]
+        # Remove the /48 or other prefix length
+        prefix_base = prefix.split("/")[0]
+        # Add ::face to the prefix
+        ipv6_address = f"{prefix_base.rstrip(':')}::face"
+
+    # Render template
+    config = template.render(
+        user_asn=user_asn,
+        ipv6_address=ipv6_address,
+        generation_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    )
+
+    # Write output
+    with open(output_path, "w") as f:
+        f.write(config)
+
+    return ipv6_address
+
+
+def generate_ixp_mapping(status_data, output_path):
+    """Generate JavaScript file with IXP Tailscale IP to hostname mapping"""
+
+    # Get peers from status
+    peers = status_data.get("Peer", {})
+    mapping = {}
+
+    for peer_id, peer_info in peers.items():
+        hostname = peer_info.get("HostName", "")
+
+        # Check if this is an IXP server (hostname starts with "ixp")
+        if hostname.startswith("ixp"):
+            # Get both IPv4 and IPv6 TailscaleIPs
+            tailscale_ips = peer_info.get("TailscaleIPs", [])
+
+            # Add all IPs to mapping
+            for ip in tailscale_ips:
+                mapping[ip] = hostname
+
+    # Generate JavaScript file
+    js_content = f"""// Auto-generated IXP mapping from Tailscale status
+// Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+
+const ixpMapping = {json.dumps(mapping, indent=4)};
+"""
+
+    # Write output
+    with open(output_path, "w") as f:
+        f.write(js_content)
+
+
 def main():
     print("🔧 PeerLab Bootstrap")
     print("====================")
@@ -268,6 +332,29 @@ def main():
     else:
         print("📡 Receive-only mode (no prefixes advertised)")
     print()
+
+    # Render Caddy configuration
+    print("🔧 Rendering Caddy configuration from template...")
+    caddy_template_path = Path("/templates/Caddyfile.j2")
+    caddy_output_path = Path("/output/Caddyfile")
+
+    if caddy_template_path.exists():
+        ipv6_address = render_caddy_config(
+            user_prefixes, local_asn, caddy_template_path, caddy_output_path
+        )
+        print(f"✅ Caddy configuration written to {caddy_output_path}")
+        print(f"🌐 Web server listening on [{ipv6_address}]:80")
+        print()
+    else:
+        print(f"⚠️  Caddy template not found at {caddy_template_path}, skipping")
+        print()
+
+    # Generate IXP mapping for webpage
+    print("🔧 Generating IXP mapping for webpage...")
+    generate_ixp_mapping(status, Path("/output/ixp-mapping.js"))
+    print("✅ IXP mapping written to /output/ixp-mapping.js")
+    print()
+
     print("✅ Bootstrap complete!")
 
 

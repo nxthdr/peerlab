@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PeerLab - ASN Connectivity Test</title>
+    <style>
+        :root {
+            --color-primary: #3B82F6;
+            --color-accent: #2DD4BF;
+            --color-bg: #1A1C1D;
+            --color-content-bg: #2A2C31;
+            --color-text: #E5E7EB;
+            --color-text-muted: #9CA3AF;
+            --color-heading: #F9FAFB;
+            --color-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            background: var(--color-bg);
+            color: var(--color-text);
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6;
+            font-size: 15px;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: var(--color-content-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            padding: 3rem;
+            max-width: 700px;
+            width: 100%;
+            border: 1px solid var(--color-border);
+        }
+
+        h1 {
+            font-size: 2.6rem;
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.8px;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            color: var(--color-text-muted);
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .info-box {
+            background: rgba(0, 0, 0, 0.2);
+            border-left: 4px solid var(--color-accent);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+            border: 1px solid var(--color-border);
+            border-left: 4px solid var(--color-accent);
+        }
+
+        .label {
+            color: var(--color-text-muted);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .value {
+            color: var(--color-heading);
+            font-size: 1.5rem;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+
+        .ixp {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2.5rem;
+        }
+
+        .asn {
+            color: var(--color-accent);
+            font-size: 2.5rem;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, rgba(45, 212, 191, 0.2) 0%, rgba(45, 212, 191, 0.1) 100%);
+            color: var(--color-accent);
+            border: 1px solid var(--color-accent);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            margin-top: 1.5rem;
+            font-weight: 600;
+        }
+
+        .footer {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--color-border);
+            color: var(--color-text-muted);
+            font-size: 0.95rem;
+            text-align: center;
+            line-height: 1.8;
+        }
+
+        .footer a {
+            color: var(--color-accent);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .footer a:hover {
+            filter: brightness(1.2);
+            text-decoration: underline;
+        }
+
+        .loading {
+            text-align: center;
+            color: var(--color-text-muted);
+            padding: 2rem;
+        }
+
+        .error {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+            border-left-color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .error .label {
+            color: #ef4444;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .value {
+                font-size: 1.2rem;
+            }
+
+            .ixp, .asn {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PeerLab</h1>
+        <p class="subtitle">ASN Connectivity Test</p>
+
+        <div id="content" class="loading">
+            <p>Loading your network information...</p>
+        </div>
+    </div>
+
+    <!-- Load dynamically generated IXP mapping -->
+    <script src="/ixp-mapping.js"></script>
+
+    <script>
+        async function displayInfo() {
+            const content = document.getElementById('content');
+
+            // Get client IP from Caddy placeholder (will be replaced server-side)
+            const clientIP = '{{placeholder "http.request.remote.host"}}';
+
+            // Get ASN from response header
+            let userASN = 'Unknown';
+            try {
+                const response = await fetch(window.location.href);
+                userASN = response.headers.get('X-User-ASN') || 'Unknown';
+            } catch (error) {
+                console.error('Failed to fetch ASN from header:', error);
+            }
+
+            if (!clientIP || clientIP.includes('placeholder')) {
+                content.innerHTML = `
+                    <div class="info-box error">
+                        <div class="label">Error</div>
+                        <p>Unable to determine your IP address</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Check if this is an IXP server
+            const ixpHostname = ixpMapping[clientIP];
+            const displayLabel = ixpHostname ? 'Connected via IXP Server' : 'Your IPv6 Address';
+            const displayValue = ixpHostname || clientIP;
+
+            content.innerHTML = `
+                <div class="info-box">
+                    <div class="label">${displayLabel}</div>
+                    <div class="value ixp">${displayValue}</div>
+                </div>
+
+                <div class="info-box">
+                    <div class="label">Your ASN</div>
+                    <div class="value asn">${userASN}</div>
+                </div>
+
+                <div style="text-align: center;">
+                    <span class="status">✓ Connected via PeerLab</span>
+                </div>
+
+                <div class="footer">
+                    <p>This page confirms your connectivity through PeerLab's BGP network.</p>
+                    <p style="margin-top: 10px;">Learn more at <a href="https://nxthdr.dev" style="color: #667eea;">nxthdr.dev</a></p>
+                </div>
+            `;
+        }
+
+        displayInfo();
+    </script>
+</body>
+</html>
