@@ -129,3 +129,11 @@ To change advertised prefixes:
    ```
 
 The bootstrap process will regenerate the BIRD configuration with your new prefixes.
+
+## Updating BIRD Configuration
+
+1. Update BIRD configuration in `workspace/` directory
+2. Reload BIRD with:
+   ```bash
+   make bird-config
+   ```
