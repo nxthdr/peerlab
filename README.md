@@ -2,9 +2,6 @@
 
 Learn BGP by connecting to a real Internet Exchange Point (IXP) and receiving the full IPv6 routing table.
 
-> [!WARNING]
-> Currently in early-stage development.
-
 ## Requirements
 
 You'll need Docker and Docker Compose installed. PeerLab uses Headscale (a self-hosted Tailscale control server) for secure connectivity to the IXP.
