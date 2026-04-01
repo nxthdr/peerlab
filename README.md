@@ -106,6 +106,9 @@ make bird CMD='show route export ixpfra01'
 
 # View the static routes table (your configured prefixes)
 make bird-prefixes
+
+# Check prefix visibility on RIPE RIS route collectors
+make ris-visibility
 ```
 
 ### How It Works

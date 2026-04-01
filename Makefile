@@ -1,4 +1,4 @@
-.PHONY: help setup auth up down restart logs status bird birdc tailscale shell-bird shell-tailscale
+.PHONY: help setup auth up down restart logs status bird birdc tailscale shell-bird shell-tailscale ris-visibility
 
 # Default target
 help:
@@ -26,6 +26,9 @@ help:
 	@echo "  make bird-prefixes   - Show user-configured prefixes"
 	@echo "  make bird-config     - Reload BIRD configuration"
 	@echo "  make shell-bird      - Open shell in BIRD container"
+	@echo ""
+	@echo "Monitoring:"
+	@echo "  make ris-visibility  - Check prefix visibility on RIPE RIS route collectors"
 	@echo ""
 	@echo "Tailscale Commands:"
 	@echo "  make tailscale       - Run any Tailscale command (usage: make tailscale CMD='status')"
@@ -131,3 +134,14 @@ ts-ping:
 
 shell-tailscale:
 	@docker exec -ti peerlab-tailscale /bin/sh
+
+# Monitoring
+ris-visibility:
+	@echo "=== RIPE RIS Visibility ==="
+	@docker exec peerlab-bird birdc show route protocol user_prefixes 2>/dev/null \
+		| grep -oE '[0-9a-f:]+/[0-9]+' \
+		| while read prefix; do \
+			count=$$(curl -s "https://stat.ripe.net/data/looking-glass/data.json?resource=$$prefix" \
+				| python3 -c "import sys,json; print(len(json.load(sys.stdin).get('data',{}).get('rrcs',[])))"); \
+			echo "$$prefix: $$count RIS route collectors"; \
+		done
